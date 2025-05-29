@@ -1,0 +1,496 @@
+/* mobile-responsive.css - Mobile-first responsive design for Remote Desktop Pro */
+
+/* Base mobile-first styles */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+/* PWA Safe Area Handling */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Main container */
+.app-container {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header/Navigation */
+.app-header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.app-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4757;
+  transition: background-color 0.3s ease;
+}
+
+.status-indicator.connected {
+  background: #2ed573;
+}
+
+.status-indicator.connecting {
+  background: #ffa502;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Main content area */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Connection form */
+.connection-form {
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  min-height: 44px; /* Touch target size */
+  min-width: 44px;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* Remote desktop canvas container */
+.canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.remote-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  cursor: none;
+  touch-action: none;
+}
+
+/* Loading states */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  z-index: 200;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 16px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* Error states */
+.error-message {
+  background: linear-gradient(135deg, #ff4757, #ff3838);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Success states */
+.success-message {
+  background: linear-gradient(135deg, #2ed573, #1e90ff);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Connection info panel */
+.connection-info {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  backdrop-filter: blur(10px);
+  z-index: 150;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.3s ease;
+}
+
+.connection-info.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.7);
+  margin-right: 12px;
+}
+
+.info-value {
+  color: #2ed573;
+  font-weight: 500;
+}
+
+/* Quality indicator */
+.quality-indicator {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 2px;
+  z-index: 150;
+}
+
+.quality-bar {
+  width: 3px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 1px;
+  transition: background-color 0.3s ease;
+}
+
+.quality-bar.active {
+  background: #2ed573;
+}
+
+.quality-bar.warning {
+  background: #ffa502;
+}
+
+.quality-bar.error {
+  background: #ff4757;
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) {
+  .app-title {
+    font-size: 20px;
+  }
+  
+  .connection-form {
+    max-width: 500px;
+    padding: 30px;
+  }
+  
+  .form-input {
+    font-size: 16px;
+    padding: 14px 18px;
+  }
+  
+  .btn {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+  
+  .connection-info {
+    top: 20px;
+    left: 20px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  
+  .quality-indicator {
+    top: 20px;
+    right: 20px;
+  }
+  
+  .quality-bar {
+    width: 4px;
+    height: 16px;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .app-container {
+    flex-direction: row;
+  }
+  
+  .app-header {
+    width: 300px;
+    height: 100vh;
+    flex-direction: column;
+    padding: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+  }
+  
+  .app-title {
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .connection-status {
+    margin-top: auto;
+  }
+  
+  .connection-form {
+    max-width: none;
+    width: 100%;
+    padding: 0;
+  }
+  
+  .canvas-container {
+    flex: 1;
+  }
+  
+  .remote-canvas {
+    cursor: default;
+  }
+}
+
+/* High DPI / Retina Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .remote-canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  /* Already using dark theme, but could add variations */
+  .form-input {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .btn-primary {
+    background: #0000ff;
+    border: 2px solid white;
+  }
+  
+  .form-input {
+    border: 2px solid white;
+  }
+  
+  .status-indicator.connected {
+    background: #00ff00;
+    border: 1px solid white;
+  }
+}
+
+/* Print styles */
+@media print {
+  .app-container {
+    display: none;
+  }
+}
+
+/* Landscape mobile specific */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-header {
+    padding: 8px 16px;
+  }
+  
+  .app-title {
+    font-size: 16px;
+  }
+  
+  

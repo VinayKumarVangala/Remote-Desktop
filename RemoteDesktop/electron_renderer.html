@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Desktop Pro - Desktop Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #7c3aed 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+        }
+
+        .status-dot.streaming {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn:disabled {
+            background: rgba(107, 114, 128, 0.5);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.danger {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #10b981, #059669);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(107, 114, 128, 0.5);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .switch.active {
+            background: #3b82f6;
+        }
+
+        .switch-handle {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .switch.active .switch-handle {
+            transform: translateX(20px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 2px;
+        }
+
+        .connection-id {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 2px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            margin-bottom: 15px;
+        }
+
+        .client-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .client-item {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+
+        .client-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .client-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .logs {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            overflow-y: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .log-timestamp {
+            color: rgba(255, 255, 255, 0.5);
+            margin-right: 10px;
+        }
+
+        .log-info { color: #3b82f6; }
+        .log-success { color: #10b981; }
+        .log-warning { color: #f59e0b; }
+        .log-error { color: #ef4444; }
+
+        .shortcuts {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .shortcut-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .file-transfer-progress {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            max-width: 300px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-color: #10b981;
+        }
+
+        .notification.error {
+            border-color: #ef4444;
+        }
+
+        .notification.warning {
+            border-color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <!-- Connection Settings -->
+            <div class="card">
+                <h3>🔌 Connection</h3>
+                <div class="input-group">
+                    <label>Server URL</label>
+                    <input type="text" id="serverUrl" value="ws://localhost:8080" placeholder="ws://localhost:8080">
+                </div>
+                <button class="btn" id="connectBtn" onclick="toggleConnection()">Connect to Server</button>
+                
+                <div id="connectionInfo" style="display: none;">
+                    <div class="connection-id" id="connectionId">Not Connected</div>
+                    <p style="font-size: 12px; text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                        Share this ID with remote users
+                    </p>
+                </div>
+            </div>
+
+            <!-- Screen Sharing -->
+            <div class="card">
+                <h3>📺 Screen Sharing</h3>
+                <div class="input-group">
+                    <label>Select Screen</label>
+                    <select id="screenSelect">
+                        <option>Loading screens...</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Quality</label>
+                    <select id="qualitySelect">
+                        <option value="high">High (30 FPS)</option>
+                        <option value="medium">Medium (20 FPS)</option>
+                        <option value="low">Low (10 FPS)</option>
+                    </select>
+                </div>
+                <button class="btn" id="shareBtn" onclick="toggleScreenShare()" disabled>Start Screen Share</button>
+            </div>
+
+            <!-- Remote Control -->
+            <div class="card">
+                <h3>🖱️ Remote Control</h3>
+                <div class="toggle-switch">
+                    <div class="switch" id="remoteControlSwitch" onclick="toggleRemoteControl()">
+                        <div class="switch-handle"></div>
+                    </div>
+                    <span>Allow Remote Control</span>
+                </div>
+                <div class="shortcuts">
+                    <div class="shortcut-item">
+                        <span>Toggle Screen Share</span>
+                        <span class="shortcut-key">Ctrl+Shift+S</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Toggle Remote Control</span>
+                        <span class="shortcut-key">Ctrl+Shift+R</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Emergency Disconnect</span>
+                        <span class="shortcut-key">Ctrl+Shift+D</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card">
+                <h3>📊 Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="fpsValue">0</div>
+                        <div class="stat-label">FPS</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="clientsValue">0</div>
+                        <div class="stat-label">Clients</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="framesValue">0</div>
+                        <div class="stat-label">Frames</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="commandsValue">0</div>
+                        <div class="stat-label">Commands</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Clients -->
+            <div class="card">
+                <h3>👥 Connected Clients</h3>
+                <div class="client-list" id="clientList">
+                    <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 14px;">
+                        No clients connected
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <div class="logo">
+                    <div class="logo-icon">RD</div>
+                    <div>
+                        <div>Remote Desktop Pro</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">Desktop Agent</div>
+                    </div>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+
+            <div class="logs" id="logs">
+                <div class="log-entry">
+                    <span class="log-timestamp">00:00:00</span>
+                    <span class="log-info">Desktop Agent initialized</span>
+                </div>
+                <div class="log-entry">
+                    <span class="log-timestamp">00:00:01</span>
+                    <span class="log-info">Ready to connect to signaling server</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let isConnected = false;
+        let isStreaming = false;
+        let allowRemoteControl = false;
+        let connectionId = null;
+        let connectedClients = new Set();
+
+        // Initialize the application
+        async function initialize() {
+            await loadAvailableScreens();
+            setupEventListeners();
+            addLog('Application ready', 'success');
+        }
+
+        // Load available screens
+        async function loadAvailableScreens() {
+            try {
+                const screens = await ipcRenderer.invoke('get-screens');
+                const select = document.getElementById('screenSelect');
+                select.innerHTML = '';
+                
+                screens.forEach(screen => {
+                    const option = document.createElement('option');
+                    option.value = screen.id;
+                    option.textContent = `${screen.label} (${screen.bounds.width}x${screen.bounds.height})`;
+                    if (screen.primary) {
+                        option.textContent += ' - Primary';
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+                
+                addLog(`Loaded ${screens.length} available screens`, 'info');
+            } catch (error) {
+                addLog(`Failed to load screens: ${error.message}`, 'error');
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // IPC Event listeners
+            ipcRenderer.on('registered', (event, data) => {
+                connectionId = data.id;
+                document.getElementById('connectionId').textContent = connectionId;
+                document.getElementById('connectionInfo').style.display = 'block';
+                updateConnectionStatus('connected');
+                addLog(`Registered with ID: ${connectionId}`, 'success');
+            });
+
+            ipcRenderer.on('screen-share-started', (event, data) => {
+                isStreaming = true;
+                updateScreenShareButton();
+                updateConnectionStatus('streaming');
+                addLog('Screen sharing started', 'success');
+            });
+
+            ipcRenderer.on('screen-share-stopped', () => {
+                isStreaming = false;
+                updateScreenShareButton();
+                updateConnectionStatus(isConnected ? 'connected' : 'disconnected');
+                addLog('Screen sharing stopped', 'warning');
+            });
+
+            ipcRenderer.on('client-connected', (event, clientId) => {
+                connectedClients.add(clientId);
+                updateClientList();
+                updateStats();
+                addLog(`Client connected: ${clientId}`, 'success');
+            });
+
+            ipcRenderer.on('client-disconnected', (event, clientId) => {
+                connectedClients.delete(clientId);
+                updateClientList();
+                updateStats();
+                addLog(`Client disconnected: ${clientId}`, 'warning');
+            });
+
+            ipcRenderer.on('stats-update', (event, stats) => {
+                updateStatsDisplay(stats);
+            });
+
+            ipcRenderer.on('file-transfer-request', (event, request) => {
+                showFileTransferRequest(request);
+            });
+
+            ipcRenderer.on('remote-control-toggled', (event, enabled) => {
+                allowRemoteControl = enabled;
+                updateRemoteControlSwitch();
+                addLog(`Remote control ${enabled ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            ipcRenderer.on('server-disconnected', () => {
+                isConnected = false;
+                updateConnectionStatus('disconnected');
+                updateConnectionButton();
+                addLog('Disconnected from server', 'error');
+            });
+
+            ipcRenderer.on('emergency-disconnect', () => {
+                isConnected = false;
+                isStreaming = false;
+                allowRemoteControl = false;
+                updateConnectionStatus('disconnected');
+                updateAllButtons();
+                addLog('EMERGENCY DISCONNECT ACTIVATED', 'error');
+                showNotification('Emergency disconnect activated!', 'error');
+            });
+        }
+
+        // Toggle connection to server
+        async function toggleConnection() {
+            if (isConnected) {
+                // Disconnect logic would go here
+                addLog('Disconnecting from server...', 'info');
+            } else {
+                const serverUrl = document.getElementById('serverUrl').value;
+                if (!serverUrl) {
+                    showNotification('Please enter server URL', 'error');
+                    return;
+                }
+
+                addLog(`Connecting to ${serverUrl}...`, 'info');
+                
+                try {
+                    const result = await ipcRenderer.invoke('connect-to-server', serverUrl);
+                    if (result.success) {
+                        isConnected = true;
+                        updateConnectionButton();
+                        document.getElementById('shareBtn').disabled = false;
+                        addLog('Connected to server successfully', 'success');
+                    } else {
+                        addLog(`Connection failed: ${result.error}`, 'error');
+                        showNotification('Connection failed', 'error');
+                    }
+                } catch (error) {
+                    addLog(`Connection error: ${error.message}`, 'error');
+                    showNotification('Connection error', 'error');
+                }
+            }
+        }
+
+        // Toggle screen sharing
+        async function toggleScreenShare() {
+            if (isStreaming) {
+                const result = await ipcRenderer.invoke('stop-screen-share');
+                if (result.success) {
+                    addLog('Screen sharing stopped', 'info');
+                }
+            } else {
+                const screenId = document.getElementById('screenSelect').value;
+                const quality = document.getElementById('qualitySelect').value;
+                
+                if (!screenId) {
+                    showNotification('Please select a screen', 'error');
+                    return;
+                }
+
+                const options = {
+                    quality: quality,
+                    frameRate: quality === 'high' ? 30 : quality === 'medium' ? 20 : 10
+                };
+
+                addLog(`Starting screen share for screen ${screenId}...`, 'info');
+                
+                try {
+                    const result = await ipcRenderer.invoke('start-screen-share', screenId, options);
+                    if (result.success) {
+                        addLog('Screen sharing started successfully', 'success');
+                    } else {
+                        addLog(`Screen share failed: ${result.error}`, 'error');
+                        showNotification('Screen share failed', 'error');
+                    }
+                } catch (error) {
+                    addLog(`Screen share error: ${error.message}`, 'error');
+                    showNotification('Screen share error', 'error');
+                }
+            }
+        }
+
+        // Toggle remote control
+        async function toggleRemoteControl() {
+            allowRemoteControl = !allowRemoteControl;
+            const result = await ipcRenderer.invoke('toggle-remote-control', allowRemoteControl);
+            
+            if (result.success) {
+                updateRemoteControlSwitch();
+                addLog(`Remote control ${allowRemoteControl ? 'enabled' : 'disabled'}`, 'info');
+            }
+        }
+
+        // Update UI functions
+        function updateConnectionStatus(status) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusDot.className = `status-dot ${status}`;
+            statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function updateConnectionButton() {
+            const btn = document.getElementById('connectBtn');
+            btn.textContent = isConnected ? 'Disconnect' : 'Connect to Server';
+            btn.className = isConnected ? 'btn danger' : 'btn';
+        }
+
+        function updateScreenShareButton() {
+            const btn = document.getElementById('shareBtn');
+            btn.textContent = isStreaming ? 'Stop Screen Share' : 'Start Screen Share';
+            btn.className = isStreaming ? 'btn danger' : 'btn';
+        }
+
+        function updateRemoteControlSwitch() {
+            const switchEl = document.getElementById('remoteControlSwitch');
+            if (allowRemoteControl) {
+                switchEl.classList.add('active');
+            } else {
+                switchEl.classList.remove('active');
+            }
+        }
+
+        function updateAllButtons() {
+            updateConnectionButton();
+            updateScreenShareButton();
+            updateRemoteControlSwitch();
+        }
+
+        function updateClientList() {
+            const clientList = document.getElementById('clientList');
+            
+            if (connectedClients.size === 0) {
+                clientList.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 14px;">No clients connected</p>';
+            } else {
+                clientList.innerHTML = '';
+                connectedClients.forEach(clientId => {
+                    const clientItem = document.createElement('div');
+                    clientItem.className = 'client-item';
+                    clientItem.innerHTML = `
+                        <span class="client-name">${clientId}</span>
+                        <div class="client-status"></div>
+                    `;
+                    clientList.appendChild(clientItem);
+                });
+            }
+        }
+
+        function updateStatsDisplay(stats) {
+            document.getElementById('fpsValue').textContent = stats.averageFPS || 0;
+            document.getElementById('clientsValue').textContent = connectedClients.size;
+            document.getElementById('framesValue').textContent = stats.framesStreamed || 0;
+            document.getElementById('commandsValue').textContent = stats.commandsReceived || 0;
+        }
+
+        function updateStats() {
+            document.getElementById('clientsValue').textContent = connectedClients.size;
+        }
+
+        // Utility functions
+        function addLog(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-timestamp">${timestamp}</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function showFileTransferRequest(request) {
+            const message = `${request.from} wants to send file: ${request.fileName} (${formatFileSize(request.fileSize)})`;
+            
+            if (confirm(message + '\n\nAccept file transfer?')) {
+                addLog(`Accepting file transfer: ${request.fileName}`, 'success');
+                // Accept file transfer logic
+            } else {
+                addLog(`Rejected file transfer: ${request.fileName}`, 'warning');
+                // Reject file transfer logic
+            }
+        }
+
+        function formatFileSize(bytes) {
